@@ -11,6 +11,7 @@ import { paginatedResponse, paginationParams } from '../common/utils/paginate';
 import { ParticipantAccountsService } from '../participants/participant-accounts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { PublicRegistrationDto } from './dto/public-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 
 @Injectable()
@@ -128,6 +129,57 @@ export class RegistrationsService {
       where: { id },
       data: { status: RegistrationStatus.DISQUALIFIED },
     });
+  }
+
+  async publicRegister(dto: PublicRegistrationDto) {
+    const race = await this.prisma.race.findUnique({
+      where: { id: dto.raceId },
+      include: { event: true },
+    });
+    if (!race) throw new NotFoundException('Race not found');
+
+    let participant = await this.prisma.participant.findUnique({ where: { email: dto.email } });
+    if (!participant) {
+      participant = await this.prisma.participant.create({
+        data: {
+          fullName: dto.fullName,
+          email: dto.email,
+          birthdate: new Date(dto.birthdate),
+          gender: dto.gender,
+        },
+      });
+    }
+
+    const existing = await this.prisma.registration.findUnique({
+      where: { participantId_raceId: { participantId: participant.id, raceId: dto.raceId } },
+    });
+    if (existing) {
+      return { registration: existing, participant, alreadyRegistered: true };
+    }
+
+    const registration = await this.prisma.registration.create({
+      data: { participantId: participant.id, raceId: dto.raceId },
+      include: { race: { include: { event: true } }, participant: true },
+    });
+
+    return { registration, participant, alreadyRegistered: false };
+  }
+
+  async lookup(raceId: string, search: string) {
+    const registrations = await this.prisma.registration.findMany({
+      where: {
+        raceId,
+        participant: {
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      },
+      include: { participant: true, race: true, distributions: true },
+      take: 10,
+    });
+    return registrations;
   }
 
   async findByBib(raceId: string, bibNumber: string) {

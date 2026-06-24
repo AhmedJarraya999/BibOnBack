@@ -13,12 +13,14 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import type { Response } from 'express';
 import * as QRCode from 'qrcode';
 
+import { Public } from '../common/decorators/public.decorator';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { VolunteerPermission } from '../common/constants/volunteer-permissions';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { PublicRegistrationDto } from './dto/public-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { RegistrationsService } from './registrations.service';
 
@@ -27,6 +29,22 @@ import { RegistrationsService } from './registrations.service';
 @Controller('registrations')
 export class RegistrationsController {
   constructor(private readonly registrationsService: RegistrationsService) {}
+
+  @Public()
+  @ApiOperation({ summary: 'Public pre-registration (no auth required)' })
+  @Post('public')
+  publicRegister(@Body() dto: PublicRegistrationDto) {
+    return this.registrationsService.publicRegister(dto);
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.VOLUNTEER)
+  @ApiOperation({ summary: 'Lookup registrations by name or email for distribution' })
+  @ApiQuery({ name: 'raceId', required: true })
+  @ApiQuery({ name: 'search', required: true })
+  @Get('lookup')
+  lookup(@Query('raceId') raceId: string, @Query('search') search: string) {
+    return this.registrationsService.lookup(raceId, search);
+  }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Register a participant for a race' })

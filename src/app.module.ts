@@ -13,6 +13,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
 import { DistributionsModule } from './distributions/distributions.module';
+import { PaymentsModule } from './payments/payments.module';
 import { EventsModule } from './events/events.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ParticipantsModule } from './participants/participants.module';
@@ -62,6 +63,7 @@ import { VolunteersModule } from './volunteers/volunteers.module';
     ResultsModule,
     DashboardModule,
     DistributionsModule,
+    PaymentsModule,
     MailModule,
   ],
   controllers: [AppController],

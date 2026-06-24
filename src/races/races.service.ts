@@ -21,7 +21,7 @@ export class RacesService {
     this.assertOwnerOrAdmin(event.organization.ownerId, requester);
 
     return this.prisma.race.create({
-      data: { name: dto.name, distance: dto.distance, startTime: new Date(dto.startTime), eventId: dto.eventId },
+      data: { name: dto.name, distance: dto.distance, startTime: new Date(dto.startTime), eventId: dto.eventId, ...(dto.fee !== undefined && { fee: dto.fee }) },
     });
   }
 
@@ -55,6 +55,7 @@ export class RacesService {
         ...(dto.name && { name: dto.name }),
         ...(dto.distance !== undefined && { distance: dto.distance }),
         ...(dto.startTime && { startTime: new Date(dto.startTime) }),
+        ...(dto.fee !== undefined && { fee: dto.fee }),
       },
     });
   }
