@@ -8,11 +8,15 @@ import {
   Post,
   Query,
   Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import * as QRCode from 'qrcode';
 
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -20,6 +24,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { VolunteerPermission } from '../common/constants/volunteer-permissions';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { CsvImportService } from './csv-import.service';
 import { PublicRegistrationDto } from './dto/public-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { RegistrationsService } from './registrations.service';
@@ -28,7 +33,10 @@ import { RegistrationsService } from './registrations.service';
 @ApiTags('Registrations')
 @Controller('registrations')
 export class RegistrationsController {
-  constructor(private readonly registrationsService: RegistrationsService) {}
+  constructor(
+    private readonly registrationsService: RegistrationsService,
+    private readonly csvImportService: CsvImportService,
+  ) {}
 
   @Public()
   @ApiOperation({ summary: 'Public pre-registration (no auth required)' })
@@ -47,6 +55,35 @@ export class RegistrationsController {
   }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Import participants from Tunisie Evenement CSV' })
+  @Post('import/:raceId')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(
+    @Param('raceId') raceId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.csvImportService.importFromCsv(raceId, file.buffer);
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Live dashboard stats (status, payment, distribution counts)' })
+  @ApiQuery({ name: 'eventId', required: false })
+  @ApiQuery({ name: 'raceId', required: false })
+  @Get('stats')
+  getStats(
+    @CurrentUser() user: { id: string; role: UserRole },
+    @Query('eventId') eventId?: string,
+    @Query('raceId') raceId?: string,
+  ) {
+    return this.registrationsService.getStats({
+      eventId,
+      raceId,
+      userId: user.id,
+      isAdmin: user.role === UserRole.ADMIN,
+    });
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Register a participant for a race' })
   @Post()
   create(@Body() dto: CreateRegistrationDto) {
@@ -59,10 +96,15 @@ export class RegistrationsController {
   @Get()
   findAll(
     @Query() pagination: PaginationDto,
+    @CurrentUser() user: { id: string; role: UserRole },
     @Query('raceId') raceId?: string,
     @Query('participantId') participantId?: string,
   ) {
-    return this.registrationsService.findAll({ raceId, participantId }, pagination.page!, pagination.limit!);
+    return this.registrationsService.findAll(
+      { raceId, participantId, userId: user.id, isAdmin: user.role === UserRole.ADMIN },
+      pagination.page!,
+      pagination.limit!,
+    );
   }
 
   @ApiOperation({ summary: 'Get a registration by ID' })

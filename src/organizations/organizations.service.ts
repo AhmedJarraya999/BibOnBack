@@ -16,11 +16,12 @@ export class OrganizationsService {
     });
   }
 
-  async findAll(page: number, limit: number) {
+  async findAll(page: number, limit: number, requester: { id: string; role: UserRole }) {
     const { skip, take } = paginationParams(page, limit);
+    const where = requester.role === UserRole.ADMIN ? {} : { ownerId: requester.id };
     const [data, total] = await this.prisma.$transaction([
-      this.prisma.organization.findMany({ skip, take, orderBy: { createdAt: 'desc' } }),
-      this.prisma.organization.count(),
+      this.prisma.organization.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      this.prisma.organization.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

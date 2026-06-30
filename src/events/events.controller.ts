@@ -26,8 +26,12 @@ export class EventsController {
 
   @ApiOperation({ summary: 'List all events (paginated)' })
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.eventsService.findAll(pagination.page!, pagination.limit!);
+  findAll(
+    @Query() pagination: PaginationDto,
+    @CurrentUser() user: AuthUser,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    return this.eventsService.findAll(pagination.page!, pagination.limit!, user, organizationId);
   }
 
   @ApiOperation({ summary: 'Get an event by ID' })

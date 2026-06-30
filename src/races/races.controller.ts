@@ -34,10 +34,11 @@ export class RacesController {
   @Get()
   findAll(
     @Query() pagination: PaginationDto,
+    @CurrentUser() user: AuthUser,
     @Query('search') search?: string,
     @Query('eventId') eventId?: string,
   ) {
-    return this.racesService.findAll(pagination.page!, pagination.limit!, { search, eventId });
+    return this.racesService.findAll(pagination.page!, pagination.limit!, user, { search, eventId });
   }
 
   @ApiOperation({ summary: 'Get a race by ID' })

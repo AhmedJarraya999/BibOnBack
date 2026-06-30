@@ -22,11 +22,15 @@ export class EventsService {
     });
   }
 
-  async findAll(page: number, limit: number) {
+  async findAll(page: number, limit: number, requester: AuthUser, organizationId?: string) {
     const { skip, take } = paginationParams(page, limit);
+    const where = {
+      ...(requester.role !== UserRole.ADMIN && { organization: { ownerId: requester.id } }),
+      ...(organizationId && { organizationId }),
+    };
     const [data, total] = await this.prisma.$transaction([
-      this.prisma.event.findMany({ skip, take, orderBy: { date: 'desc' } }),
-      this.prisma.event.count(),
+      this.prisma.event.findMany({ where, skip, take, orderBy: { date: 'desc' } }),
+      this.prisma.event.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);
   }

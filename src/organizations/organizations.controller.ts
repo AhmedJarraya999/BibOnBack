@@ -26,8 +26,8 @@ export class OrganizationsController {
 
   @ApiOperation({ summary: 'List all organizations (paginated)' })
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.organizationsService.findAll(pagination.page!, pagination.limit!);
+  findAll(@Query() pagination: PaginationDto, @CurrentUser() user: AuthUser) {
+    return this.organizationsService.findAll(pagination.page!, pagination.limit!, user);
   }
 
   @ApiOperation({ summary: 'Get an organization by ID' })

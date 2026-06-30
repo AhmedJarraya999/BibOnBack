@@ -42,14 +42,27 @@ export class RegistrationsService {
     }
   }
 
-  async findAll(filters: { raceId?: string; participantId?: string }, page: number, limit: number) {
+  async findAll(
+    filters: { raceId?: string; participantId?: string; userId?: string; isAdmin?: boolean },
+    page: number,
+    limit: number,
+  ) {
     const { skip, take } = paginationParams(page, limit);
     const where = {
+      ...(!filters.isAdmin && filters.userId && {
+        race: { event: { organization: { ownerId: filters.userId } } },
+      }),
       ...(filters.raceId && { raceId: filters.raceId }),
       ...(filters.participantId && { participantId: filters.participantId }),
     };
     const [data, total] = await this.prisma.$transaction([
-      this.prisma.registration.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      this.prisma.registration.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: { participant: true, race: true },
+      }),
       this.prisma.registration.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);
@@ -217,6 +230,92 @@ export class RegistrationsService {
       totalRegistered: checkedIn + notArrived,
       checkedIn,
       notArrived,
+    };
+  }
+
+  async getStats(filters: { eventId?: string; raceId?: string; userId?: string; isAdmin?: boolean }) {
+    let raceIds: string[];
+
+    if (filters.raceId) {
+      raceIds = [filters.raceId];
+    } else if (filters.eventId) {
+      const races = await this.prisma.race.findMany({
+        where: { eventId: filters.eventId },
+        select: { id: true },
+      });
+      raceIds = races.map((r) => r.id);
+    } else {
+      const where = (!filters.isAdmin && filters.userId)
+        ? { event: { organization: { ownerId: filters.userId } } }
+        : {};
+      const races = await this.prisma.race.findMany({ where, select: { id: true } });
+      raceIds = races.map((r) => r.id);
+    }
+
+    const regWhere = { raceId: { in: raceIds } };
+
+    const [statusGroups, paymentGroups, distGroups, races] = await Promise.all([
+      this.prisma.registration.groupBy({
+        by: ['status'],
+        where: regWhere,
+        _count: { status: true },
+      }),
+      this.prisma.registration.groupBy({
+        by: ['paymentStatus'],
+        where: regWhere,
+        _count: { paymentStatus: true },
+      }),
+      this.prisma.distribution.groupBy({
+        by: ['itemType'],
+        where: { registration: regWhere },
+        _count: { itemType: true },
+      }),
+      this.prisma.race.findMany({
+        where: { id: { in: raceIds } },
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    const byStatus = Object.fromEntries(statusGroups.map((g) => [g.status, g._count.status]));
+    const byPayment = Object.fromEntries(paymentGroups.map((g) => [g.paymentStatus, g._count.paymentStatus]));
+    const byItem = Object.fromEntries(distGroups.map((g) => [g.itemType, g._count.itemType]));
+
+    const perRace = await Promise.all(
+      races.map(async (race) => {
+        const sg = await this.prisma.registration.groupBy({
+          by: ['status'],
+          where: { raceId: race.id },
+          _count: { status: true },
+        });
+        const st = Object.fromEntries(sg.map((g) => [g.status, g._count.status]));
+        const total = Object.values(st).reduce((a, b) => a + b, 0);
+        return {
+          raceId: race.id,
+          raceName: race.name,
+          total,
+          registered: st['REGISTERED'] ?? 0,
+          checkedIn: (st['CHECKED_IN'] ?? 0) + (st['FINISHED'] ?? 0) + (st['DISQUALIFIED'] ?? 0),
+          finished: st['FINISHED'] ?? 0,
+        };
+      }),
+    );
+
+    const total = Object.values(byStatus).reduce((a, b) => a + b, 0);
+
+    return {
+      total,
+      registered: byStatus['REGISTERED'] ?? 0,
+      checkedIn: (byStatus['CHECKED_IN'] ?? 0) + (byStatus['FINISHED'] ?? 0) + (byStatus['DISQUALIFIED'] ?? 0),
+      finished: byStatus['FINISHED'] ?? 0,
+      disqualified: byStatus['DISQUALIFIED'] ?? 0,
+      paid: byPayment['PAID'] ?? 0,
+      pending: byPayment['PENDING'] ?? 0,
+      bibsDistributed: byItem['BIB_KIT'] ?? 0,
+      tshirts: byItem['TSHIRT'] ?? 0,
+      medals: byItem['MEDAL'] ?? 0,
+      ravitos: byItem['RAVITO'] ?? 0,
+      perRace,
+      lastUpdated: new Date().toISOString(),
     };
   }
 

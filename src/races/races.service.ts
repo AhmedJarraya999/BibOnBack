@@ -25,9 +25,12 @@ export class RacesService {
     });
   }
 
-  async findAll(page: number, limit: number, filters?: { search?: string; eventId?: string }) {
+  async findAll(page: number, limit: number, requester: AuthUser, filters?: { search?: string; eventId?: string }) {
     const { skip, take } = paginationParams(page, limit);
     const where = {
+      ...(requester.role !== UserRole.ADMIN && {
+        event: { organization: { ownerId: requester.id } },
+      }),
       ...(filters?.eventId && { eventId: filters.eventId }),
       ...(filters?.search && {
         name: { contains: filters.search, mode: 'insensitive' as const },
