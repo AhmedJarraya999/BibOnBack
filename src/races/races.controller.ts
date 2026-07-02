@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { FindRacesQueryDto } from './dto/find-races-query.dto';
 import { UserRole } from '../common/enums/user-role.enum';
 import { RegistrationsService } from '../registrations/registrations.service';
 import { CreateRaceDto } from './dto/create-race.dto';
@@ -35,12 +35,10 @@ export class RacesController {
   @ApiQuery({ name: 'eventId', required: false, description: 'Filter by event' })
   @Get()
   findAll(
-    @Query() pagination: PaginationDto,
+    @Query() query: FindRacesQueryDto,
     @CurrentUser() user: AuthUser,
-    @Query('search') search?: string,
-    @Query('eventId') eventId?: string,
   ) {
-    return this.racesService.findAll(pagination.page!, pagination.limit!, user ?? null, { search, eventId });
+    return this.racesService.findAll(query.page!, query.limit!, user ?? null, { search: query.search, eventId: query.eventId });
   }
 
   @ApiOperation({ summary: 'Get a race by ID' })
