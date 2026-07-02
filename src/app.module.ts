@@ -23,6 +23,7 @@ import { RegistrationsModule } from './registrations/registrations.module';
 import { ResultsModule } from './results/results.module';
 import { UsersModule } from './users/users.module';
 import { VolunteersModule } from './volunteers/volunteers.module';
+import { CheckpointsModule } from './checkpoints/checkpoints.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { VolunteersModule } from './volunteers/volunteers.module';
     RegistrationsModule,
     UsersModule,
     VolunteersModule,
+    CheckpointsModule,
     ResultsModule,
     DashboardModule,
     DistributionsModule,

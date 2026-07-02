@@ -5,18 +5,79 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma';
+import * as bcrypt from 'bcrypt';
 
 import { UserRole } from '../common/enums/user-role.enum';
 import { paginatedResponse, paginationParams } from '../common/utils/paginate';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { CreateVolunteerDto } from './dto/create-volunteer.dto';
 import { UpdateVolunteerDto } from './dto/update-volunteer.dto';
+import { InviteVolunteerDto } from './dto/invite-volunteer.dto';
 
 interface AuthUser { id: string; role: UserRole; }
 
 @Injectable()
 export class VolunteersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {}
+
+  async invite(dto: InviteVolunteerDto, requester: AuthUser) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: dto.eventId },
+      include: { organization: true },
+    });
+    if (!event) throw new NotFoundException('Event not found');
+    this.assertOwnerOrAdmin(event.organization.ownerId, requester);
+
+    const permissions = dto.permissions ?? ['CHECK_IN'];
+    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+
+    let user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    let isNewAccount = false;
+    let tempPassword: string | undefined;
+
+    if (!user) {
+      isNewAccount = true;
+      tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
+      const hashed = await bcrypt.hash(tempPassword, 10);
+      user = await this.prisma.user.create({
+        data: {
+          name: dto.name ?? dto.email.split('@')[0],
+          email: dto.email,
+          password: hashed,
+          role: UserRole.VOLUNTEER,
+        },
+      });
+    }
+
+    try {
+      const volunteer = await this.prisma.volunteer.create({
+        data: { userId: user.id, eventId: dto.eventId, permissions },
+        include: { user: true, event: true },
+      });
+
+      await this.mail.sendVolunteerInvite({
+        to: user.email,
+        name: user.name,
+        email: user.email,
+        eventName: event.name,
+        permissions,
+        isNewAccount,
+        password: tempPassword,
+        appUrl,
+      });
+
+      return volunteer;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('This user is already a volunteer for this event');
+      }
+      throw error;
+    }
+  }
 
   async create(dto: CreateVolunteerDto, requester: AuthUser) {
     const [user, event] = await Promise.all([
@@ -46,7 +107,7 @@ export class VolunteersService {
       ...(filters.userId && { userId: filters.userId }),
     };
     const [data, total] = await this.prisma.$transaction([
-      this.prisma.volunteer.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      this.prisma.volunteer.findMany({ where, skip, take, orderBy: { createdAt: 'desc' }, include: { user: true, event: true } }),
       this.prisma.volunteer.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);

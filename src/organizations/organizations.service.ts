@@ -12,7 +12,7 @@ export class OrganizationsService {
 
   create(ownerId: string, dto: CreateOrganizationDto) {
     return this.prisma.organization.create({
-      data: { name: dto.name, ownerId },
+      data: { ...dto, ownerId },
     });
   }
 

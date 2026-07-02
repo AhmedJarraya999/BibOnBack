@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 32px; max-width: 480px; margin: 0 auto; }
+    h1 { color: #1a1a1a; font-size: 22px; }
+    .credential { background: #f0f0f0; border-radius: 4px; padding: 12px 16px; margin: 8px 0; font-family: monospace; font-size: 15px; }
+    .label { font-size: 12px; color: #666; margin-bottom: 2px; }
+    .badge { display: inline-block; background: #CC0001; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 12px; margin: 2px; }
+    .btn { display: inline-block; background: #CC0001; color: #fff; border-radius: 6px; padding: 12px 24px; text-decoration: none; font-weight: bold; margin-top: 16px; }
+    .footer { margin-top: 24px; font-size: 12px; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>You've been invited as a volunteer 🎽</h1>
+    <p>You have been assigned as a volunteer for <strong>{{eventName}}</strong>.</p>
+
+    <p><strong>Your role(s):</strong><br/>
+      {{#each permissions}}
+        <span class="badge">{{this}}</span>
+      {{/each}}
+    </p>
+
+    {{#if isNewAccount}}
+    <p>A BibOn account has been created for you. Use these credentials to log in:</p>
+
+    <div class="label">Email</div>
+    <div class="credential">{{email}}</div>
+
+    <div class="label">Temporary Password</div>
+    <div class="credential">{{password}}</div>
+    {{else}}
+    <p>Log in with your existing BibOn account:</p>
+    <div class="label">Email</div>
+    <div class="credential">{{email}}</div>
+    {{/if}}
+
+    <br/>
+    <a href="{{appUrl}}/login" class="btn">Open BibOn →</a>
+
+    <div class="footer">
+      If you did not expect this invitation, you can ignore this email.
+    </div>
+  </div>
+</body>
+</html>

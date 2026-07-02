@@ -175,6 +175,9 @@ export class RegistrationsService {
       include: { race: { include: { event: true } }, participant: true },
     });
 
+    // Create user account and send credentials email
+    await this.participantAccounts.provisionIfNeeded(participant.id, race.name);
+
     return { registration, participant, alreadyRegistered: false };
   }
 

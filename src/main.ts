@@ -15,6 +15,8 @@ async function bootstrap() {
     .map((o) => o.trim());
 
   app.use(helmet());
+  app.use(require('express').json({ limit: '10mb' }));
+  app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
 
   app.enableCors({
     origin: isDev

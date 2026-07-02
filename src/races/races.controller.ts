@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -28,6 +29,7 @@ export class RacesController {
     return this.racesService.create(dto, user);
   }
 
+  @Public()
   @ApiOperation({ summary: 'List all races (paginated, filterable by eventId and name)' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by race name' })
   @ApiQuery({ name: 'eventId', required: false, description: 'Filter by event' })
@@ -38,7 +40,7 @@ export class RacesController {
     @Query('search') search?: string,
     @Query('eventId') eventId?: string,
   ) {
-    return this.racesService.findAll(pagination.page!, pagination.limit!, user, { search, eventId });
+    return this.racesService.findAll(pagination.page!, pagination.limit!, user ?? null, { search, eventId });
   }
 
   @ApiOperation({ summary: 'Get a race by ID' })

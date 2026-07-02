@@ -2,10 +2,11 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateEventDto } from './dto/create-event.dto';
+import { FindEventsQueryDto } from './dto/find-events-query.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventsService } from './events.service';
 
@@ -27,13 +28,13 @@ export class EventsController {
   @ApiOperation({ summary: 'List all events (paginated)' })
   @Get()
   findAll(
-    @Query() pagination: PaginationDto,
+    @Query() query: FindEventsQueryDto,
     @CurrentUser() user: AuthUser,
-    @Query('organizationId') organizationId?: string,
   ) {
-    return this.eventsService.findAll(pagination.page!, pagination.limit!, user, organizationId);
+    return this.eventsService.findAll(query.page!, query.limit!, user, query.organizationId);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Get an event by ID' })
   @Get(':id')
   findOne(@Param('id') id: string) {

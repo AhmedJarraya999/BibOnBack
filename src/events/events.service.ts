@@ -1,7 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { UserRole } from '../common/enums/user-role.enum';
 import { paginatedResponse, paginationParams } from '../common/utils/paginate';
+import { slugify } from '../common/utils/slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -17,8 +18,18 @@ export class EventsService {
     if (!organization) throw new NotFoundException('Organization not found');
     this.assertOwnerOrAdmin(organization.ownerId, requester);
 
+    const slug = await this.uniqueSlug(slugify(dto.name));
+
     return this.prisma.event.create({
-      data: { name: dto.name, location: dto.location, date: new Date(dto.date), organizationId: dto.organizationId },
+      data: {
+        name: dto.name,
+        slug,
+        location: dto.location,
+        date: new Date(dto.date),
+        paymentMode: dto.paymentMode,
+        logoUrl: dto.logoUrl,
+        organizationId: dto.organizationId,
+      },
     });
   }
 
@@ -35,8 +46,10 @@ export class EventsService {
     return paginatedResponse(data, total, page, limit);
   }
 
-  async findOne(id: string) {
-    const event = await this.prisma.event.findUnique({ where: { id } });
+  async findOne(idOrSlug: string) {
+    const event = await this.prisma.event.findFirst({
+      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+    });
     if (!event) throw new NotFoundException('Event not found');
     return event;
   }
@@ -50,6 +63,8 @@ export class EventsService {
         ...(dto.name && { name: dto.name }),
         ...(dto.location && { location: dto.location }),
         ...(dto.date && { date: new Date(dto.date) }),
+        ...(dto.paymentMode && { paymentMode: dto.paymentMode }),
+        ...(dto.logoUrl !== undefined && { logoUrl: dto.logoUrl }),
       },
     });
   }
@@ -65,6 +80,15 @@ export class EventsService {
     const event = await this.prisma.event.findUnique({ where: { id }, include: { organization: true } });
     if (!event) throw new NotFoundException('Event not found');
     return event;
+  }
+
+  private async uniqueSlug(base: string): Promise<string> {
+    let slug = base;
+    let i = 1;
+    while (await this.prisma.event.findUnique({ where: { slug } })) {
+      slug = `${base}-${i++}`;
+    }
+    return slug;
   }
 
   private assertOwnerOrAdmin(ownerId: string, requester: AuthUser) {

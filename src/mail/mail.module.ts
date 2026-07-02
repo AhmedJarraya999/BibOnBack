@@ -21,6 +21,7 @@ import { MailService } from './mail.service';
             user: config.get<string>('SMTP_USER'),
             pass: config.get<string>('SMTP_PASS'),
           },
+          tls: { rejectUnauthorized: false },
         },
         defaults: {
           from: config.get<string>('SMTP_FROM') ?? '"Race Platform" <no-reply@race-platform.com>',

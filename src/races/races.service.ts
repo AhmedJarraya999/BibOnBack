@@ -25,12 +25,28 @@ export class RacesService {
     });
   }
 
-  async findAll(page: number, limit: number, requester: AuthUser, filters?: { search?: string; eventId?: string }) {
+  async findAll(page: number, limit: number, requester: AuthUser | null, filters?: { search?: string; eventId?: string }) {
     const { skip, take } = paginationParams(page, limit);
+
+    let ownershipFilter: object;
+    if (!requester) {
+      // Public access — only allowed when filtered by eventId
+      ownershipFilter = {};
+    } else if (requester.role === UserRole.ADMIN) {
+      ownershipFilter = {};
+    } else if (requester.role === UserRole.VOLUNTEER) {
+      const assignments = await this.prisma.volunteer.findMany({
+        where: { userId: requester.id },
+        select: { eventId: true },
+      });
+      const eventIds = assignments.map((a) => a.eventId);
+      ownershipFilter = { eventId: { in: eventIds } };
+    } else {
+      ownershipFilter = { event: { organization: { ownerId: requester.id } } };
+    }
+
     const where = {
-      ...(requester.role !== UserRole.ADMIN && {
-        event: { organization: { ownerId: requester.id } },
-      }),
+      ...ownershipFilter,
       ...(filters?.eventId && { eventId: filters.eventId }),
       ...(filters?.search && {
         name: { contains: filters.search, mode: 'insensitive' as const },

@@ -7,6 +7,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateVolunteerDto } from './dto/create-volunteer.dto';
 import { UpdateVolunteerDto } from './dto/update-volunteer.dto';
+import { InviteVolunteerDto } from './dto/invite-volunteer.dto';
 import { VolunteersService } from './volunteers.service';
 
 interface AuthUser { id: string; role: UserRole; }
@@ -16,6 +17,13 @@ interface AuthUser { id: string; role: UserRole; }
 @Controller('volunteers')
 export class VolunteersController {
   constructor(private readonly volunteersService: VolunteersService) {}
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Invite a volunteer by email (creates account if needed)' })
+  @Post('invite')
+  invite(@Body() dto: InviteVolunteerDto, @CurrentUser() user: AuthUser) {
+    return this.volunteersService.invite(dto, user);
+  }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Assign a volunteer to an event' })

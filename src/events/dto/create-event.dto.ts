@@ -25,6 +25,11 @@ export class CreateEventDto {
   @IsOptional()
   paymentMode?: PaymentMode;
 
+  @ApiPropertyOptional({ example: 'data:image/png;base64,...' })
+  @IsString()
+  @IsOptional()
+  logoUrl?: string;
+
   @ApiProperty({ example: 'cuid-of-organization' })
   @IsString()
   organizationId: string;
