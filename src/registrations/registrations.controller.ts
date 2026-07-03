@@ -101,7 +101,12 @@ export class RegistrationsController {
     @Query('participantId') participantId?: string,
   ) {
     return this.registrationsService.findAll(
-      { raceId, participantId, userId: user.id, isAdmin: user.role === UserRole.ADMIN },
+      {
+        raceId,
+        participantId,
+        userId: user.role === UserRole.PARTICIPANT ? undefined : user.id,
+        isAdmin: user.role === UserRole.ADMIN,
+      },
       pagination.page!,
       pagination.limit!,
     );
