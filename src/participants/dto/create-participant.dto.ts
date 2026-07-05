@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEmail, IsIn, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEmail, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateParticipantDto {
   @ApiProperty({ example: 'Ali Ben Salem' })
@@ -18,4 +18,34 @@ export class CreateParticipantDto {
   @ApiProperty({ example: 'ali@example.com' })
   @IsEmail()
   email: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bloodType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  emergencyContact?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  emergencyPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  medicalConditions?: string;
 }

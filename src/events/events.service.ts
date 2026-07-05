@@ -28,6 +28,7 @@ export class EventsService {
         date: new Date(dto.date),
         paymentMode: dto.paymentMode,
         logoUrl: dto.logoUrl,
+        pickupLocations: dto.pickupLocations ?? [],
         organizationId: dto.organizationId,
       },
     });
@@ -35,6 +36,25 @@ export class EventsService {
 
   async findAll(page: number, limit: number, requester: AuthUser, organizationId?: string) {
     const { skip, take } = paginationParams(page, limit);
+
+    // Volunteers see only events they're assigned to
+    if (requester.role === UserRole.VOLUNTEER) {
+      const assignments = await this.prisma.volunteer.findMany({
+        where: { userId: requester.id },
+        select: { eventId: true },
+      });
+      const eventIds = [...new Set(assignments.map((a) => a.eventId))];
+      const where = {
+        id: { in: eventIds },
+        ...(organizationId && { organizationId }),
+      };
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.event.findMany({ where, skip, take, orderBy: { date: 'desc' } }),
+        this.prisma.event.count({ where }),
+      ]);
+      return paginatedResponse(data, total, page, limit);
+    }
+
     const where = {
       ...(requester.role !== UserRole.ADMIN && { organization: { ownerId: requester.id } }),
       ...(organizationId && { organizationId }),
@@ -65,6 +85,7 @@ export class EventsService {
         ...(dto.date && { date: new Date(dto.date) }),
         ...(dto.paymentMode && { paymentMode: dto.paymentMode }),
         ...(dto.logoUrl !== undefined && { logoUrl: dto.logoUrl }),
+        ...(dto.pickupLocations !== undefined && { pickupLocations: dto.pickupLocations }),
       },
     });
   }

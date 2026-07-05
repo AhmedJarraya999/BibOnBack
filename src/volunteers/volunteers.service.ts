@@ -55,8 +55,8 @@ export class VolunteersService {
 
     try {
       const volunteer = await this.prisma.volunteer.create({
-        data: { userId: user.id, eventId: dto.eventId, permissions },
-        include: { user: true, event: true },
+        data: { userId: user.id, eventId: dto.eventId, raceId: dto.raceId ?? null, permissions },
+        include: { user: true, event: true, race: true },
       });
 
       await this.mail.sendVolunteerInvite({
@@ -107,7 +107,7 @@ export class VolunteersService {
       ...(filters.userId && { userId: filters.userId }),
     };
     const [data, total] = await this.prisma.$transaction([
-      this.prisma.volunteer.findMany({ where, skip, take, orderBy: { createdAt: 'desc' }, include: { user: true, event: true } }),
+      this.prisma.volunteer.findMany({ where, skip, take, orderBy: { createdAt: 'desc' }, include: { user: true, event: true, race: true } }),
       this.prisma.volunteer.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);

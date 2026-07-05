@@ -27,4 +27,34 @@ export class PublicRegistrationDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiPropertyOptional({ example: 'Tunisie' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({ example: 'Tunis centre' })
+  @IsOptional()
+  @IsString()
+  lieuDeRetrait?: string;
+
+  @ApiPropertyOptional({ example: 'A+' })
+  @IsOptional()
+  @IsString()
+  bloodType?: string;
+
+  @ApiPropertyOptional({ example: 'Fatma Jarraya' })
+  @IsOptional()
+  @IsString()
+  emergencyContact?: string;
+
+  @ApiPropertyOptional({ example: '+21698000001' })
+  @IsOptional()
+  @IsString()
+  emergencyPhone?: string;
+
+  @ApiPropertyOptional({ example: 'Diabetic, carries insulin' })
+  @IsOptional()
+  @IsString()
+  medicalConditions?: string;
 }

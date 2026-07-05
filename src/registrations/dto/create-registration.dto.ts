@@ -14,4 +14,9 @@ export class CreateRegistrationDto {
   @IsOptional()
   @IsString()
   bibNumber?: string;
+
+  @ApiPropertyOptional({ example: 'Tunis centre' })
+  @IsOptional()
+  @IsString()
+  lieuDeRetrait?: string;
 }

@@ -67,6 +67,7 @@ export class PaymentsService {
     const credentials = await this.participantAccounts.provisionIfNeeded(
       registration.participantId,
       registration.race.name,
+      registration.race.id,
     );
 
     return { registration, credentials };

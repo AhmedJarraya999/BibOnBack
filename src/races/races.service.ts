@@ -79,6 +79,19 @@ export class RacesService {
     });
   }
 
+  async uploadGpx(id: string, filename: string, requester: AuthUser) {
+    const race = await this.findRaceWithOwner(id);
+    this.assertOwnerOrAdmin(race.event.organization.ownerId, requester);
+    const gpxUrl = `/uploads/gpx/${filename}`;
+    return this.prisma.race.update({ where: { id }, data: { gpxUrl } });
+  }
+
+  async removeGpx(id: string, requester: AuthUser) {
+    const race = await this.findRaceWithOwner(id);
+    this.assertOwnerOrAdmin(race.event.organization.ownerId, requester);
+    return this.prisma.race.update({ where: { id }, data: { gpxUrl: null } });
+  }
+
   async remove(id: string, requester: AuthUser) {
     const race = await this.findRaceWithOwner(id);
     this.assertOwnerOrAdmin(race.event.organization.ownerId, requester);

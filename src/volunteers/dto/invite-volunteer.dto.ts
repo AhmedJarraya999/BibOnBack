@@ -19,5 +19,10 @@ export class InviteVolunteerDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  raceId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   name?: string;
 }

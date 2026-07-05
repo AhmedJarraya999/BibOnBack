@@ -43,21 +43,27 @@ export class MailService {
     email: string;
     password: string;
     raceName: string;
+    eventName?: string;
+    logoUrl?: string;
   }) {
     try {
       await this.mailer.sendMail({
         to: params.to,
-        subject: `Your login credentials — ${params.raceName}`,
+        subject: `Your login credentials — ${params.eventName ?? params.raceName}`,
         template: 'participant-credentials',
         context: {
           fullName: params.fullName,
           email: params.email,
           password: params.password,
           raceName: params.raceName,
+          eventName: params.eventName,
+          logoUrl: params.logoUrl,
         },
       });
+      this.logger.log(`Credentials email sent successfully to ${params.to}`);
     } catch (err) {
       this.logger.error(`Failed to send credentials email to ${params.to}: ${err.message}`);
+      this.logger.error(JSON.stringify(err, null, 2));
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -14,7 +15,8 @@ async function bootstrap() {
     .split(',')
     .map((o) => o.trim());
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use('/uploads', require('express').static(join(process.cwd(), 'uploads')));
   app.use(require('express').json({ limit: '10mb' }));
   app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
 

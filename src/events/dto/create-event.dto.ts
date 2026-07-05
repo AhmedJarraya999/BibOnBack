@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsDateString, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export enum PaymentMode {
   PREPAID_ONLY = 'PREPAID_ONLY',
@@ -29,6 +29,12 @@ export class CreateEventDto {
   @IsString()
   @IsOptional()
   logoUrl?: string;
+
+  @ApiPropertyOptional({ example: ['Tunis centre', 'La Marsa', 'Ariana'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  pickupLocations?: string[];
 
   @ApiProperty({ example: 'cuid-of-organization' })
   @IsString()

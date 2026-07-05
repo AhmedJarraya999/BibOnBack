@@ -20,12 +20,12 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { RequirePermission } from '../common/decorators/require-permission.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import { VolunteerPermission } from '../common/constants/volunteer-permissions';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { CsvImportService } from './csv-import.service';
 import { PublicRegistrationDto } from './dto/public-registration.dto';
+import { FindRegistrationsQueryDto } from './dto/find-registrations-query.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { RegistrationsService } from './registrations.service';
 
@@ -95,21 +95,25 @@ export class RegistrationsController {
   @ApiQuery({ name: 'participantId', required: false })
   @Get()
   findAll(
-    @Query() pagination: PaginationDto,
+    @Query() query: FindRegistrationsQueryDto,
     @CurrentUser() user: { id: string; role: UserRole },
-    @Query('raceId') raceId?: string,
-    @Query('participantId') participantId?: string,
   ) {
     return this.registrationsService.findAll(
       {
-        raceId,
-        participantId,
-        userId: user.role === UserRole.PARTICIPANT ? undefined : user.id,
+        raceId: query.raceId,
+        participantId: query.participantId,
+        userId: (user.role === UserRole.PARTICIPANT || user.role === UserRole.VOLUNTEER) ? undefined : user.id,
         isAdmin: user.role === UserRole.ADMIN,
       },
-      pagination.page!,
-      pagination.limit!,
+      query.page!,
+      query.limit!,
     );
+  }
+
+  @ApiOperation({ summary: 'Get finisher leaderboard for a race' })
+  @Get('leaderboard/:raceId')
+  raceLeaderboard(@Param('raceId') raceId: string) {
+    return this.registrationsService.raceLeaderboard(raceId);
   }
 
   @ApiOperation({ summary: 'Get a registration by ID' })
@@ -128,7 +132,7 @@ export class RegistrationsController {
     res.send(png);
   }
 
-  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.VOLUNTEER)
   @ApiOperation({ summary: 'Update registration (bib number, payment status)' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateRegistrationDto) {
@@ -157,6 +161,13 @@ export class RegistrationsController {
   @Post(':id/disqualify')
   disqualify(@Param('id') id: string) {
     return this.registrationsService.disqualify(id);
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.VOLUNTEER)
+  @ApiOperation({ summary: 'Mark participant as Did Not Finish (DNF)' })
+  @Post(':id/dnf')
+  dnf(@Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.registrationsService.dnf(id, body?.reason);
   }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)

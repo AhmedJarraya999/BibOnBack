@@ -15,7 +15,6 @@ import { CreateDistributionDto } from './dto/create-distribution.dto';
 export class DistributionsController {
   constructor(private readonly distributionsService: DistributionsService) {}
 
-  @RequirePermission(VolunteerPermission.DISTRIBUTE)
   @ApiOperation({ summary: 'Issue an item to a participant (medal, ravito, bib kit, etc.)' })
   @Post()
   issue(@Param('registrationId') registrationId: string, @Body() dto: CreateDistributionDto) {

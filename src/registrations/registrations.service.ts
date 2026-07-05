@@ -35,6 +35,7 @@ export class RegistrationsService {
           participantId: dto.participantId,
           raceId: dto.raceId,
           bibNumber: dto.bibNumber,
+          lieuDeRetrait: dto.lieuDeRetrait,
         },
       });
     } catch (error) {
@@ -61,7 +62,7 @@ export class RegistrationsService {
         skip,
         take,
         orderBy: { createdAt: 'desc' },
-        include: { participant: true, race: true },
+        include: { participant: true, race: { include: { event: true } } },
       }),
       this.prisma.registration.count({ where }),
     ]);
@@ -71,6 +72,12 @@ export class RegistrationsService {
   async findOne(id: string) {
     const registration = await this.prisma.registration.findUnique({
       where: { id },
+      include: {
+        participant: true,
+        race: { include: { event: true } },
+        distributions: true,
+        medicalIncidents: { orderBy: { createdAt: 'desc' } },
+      },
     });
     if (!registration) throw new NotFoundException('Registration not found');
     return registration;
@@ -102,6 +109,7 @@ export class RegistrationsService {
       const credentials = await this.participantAccounts.provisionIfNeeded(
         existing.participantId,
         race?.name ?? 'the race',
+        existing.raceId,
       );
       return { ...updated, credentials };
     }
@@ -135,6 +143,19 @@ export class RegistrationsService {
     });
   }
 
+  async dnf(id: string, reason?: string) {
+    await this.findOne(id);
+    return this.prisma.registration.update({
+      where: { id },
+      data: {
+        status: RegistrationStatus.DNF,
+        ...(reason && { medicalIncidents: {
+          create: { severity: 'MINOR', description: reason },
+        }}),
+      },
+    });
+  }
+
   async disqualify(id: string) {
     await this.findOne(id);
 
@@ -159,24 +180,45 @@ export class RegistrationsService {
           email: dto.email,
           birthdate: new Date(dto.birthdate),
           gender: dto.gender,
+          phone: dto.phone,
+          country: dto.country ?? 'Tunisie',
+          bloodType: dto.bloodType,
+          emergencyContact: dto.emergencyContact,
+          emergencyPhone: dto.emergencyPhone,
+          medicalConditions: dto.medicalConditions,
         },
       });
+    } else {
+      // Update medical fields if provided
+      if (dto.bloodType || dto.emergencyContact || dto.emergencyPhone || dto.medicalConditions) {
+        participant = await this.prisma.participant.update({
+          where: { id: participant.id },
+          data: {
+            ...(dto.bloodType && { bloodType: dto.bloodType }),
+            ...(dto.emergencyContact && { emergencyContact: dto.emergencyContact }),
+            ...(dto.emergencyPhone && { emergencyPhone: dto.emergencyPhone }),
+            ...(dto.medicalConditions && { medicalConditions: dto.medicalConditions }),
+          },
+        });
+      }
     }
 
     const existing = await this.prisma.registration.findUnique({
       where: { participantId_raceId: { participantId: participant.id, raceId: dto.raceId } },
     });
     if (existing) {
+      console.log(`[publicRegister] already registered — skipping provisionIfNeeded for ${dto.email}`);
       return { registration: existing, participant, alreadyRegistered: true };
     }
 
     const registration = await this.prisma.registration.create({
-      data: { participantId: participant.id, raceId: dto.raceId },
+      data: { participantId: participant.id, raceId: dto.raceId, lieuDeRetrait: dto.lieuDeRetrait },
       include: { race: { include: { event: true } }, participant: true },
     });
 
+    console.log(`[publicRegister] calling provisionIfNeeded for ${dto.email}`);
     // Create user account and send credentials email
-    await this.participantAccounts.provisionIfNeeded(participant.id, race.name);
+    await this.participantAccounts.provisionIfNeeded(participant.id, race.name, dto.raceId);
 
     return { registration, participant, alreadyRegistered: false };
   }
@@ -185,17 +227,39 @@ export class RegistrationsService {
     const registrations = await this.prisma.registration.findMany({
       where: {
         raceId,
-        participant: {
-          OR: [
-            { fullName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-          ],
-        },
+        OR: [
+          { bibNumber: { equals: search } },
+          { participant: { fullName: { contains: search, mode: 'insensitive' } } },
+          { participant: { email: { contains: search, mode: 'insensitive' } } },
+          { participant: { phone: { contains: search, mode: 'insensitive' } } },
+        ],
       },
       include: { participant: true, race: true, distributions: true },
       take: 10,
     });
     return registrations;
+  }
+
+  async raceLeaderboard(raceId: string) {
+    const finishers = await this.prisma.registration.findMany({
+      where: { raceId, status: 'FINISHED', finishTime: { not: null } },
+      include: { participant: true },
+      orderBy: [{ finishTime: 'asc' }],
+    });
+    return finishers.map((f, i) => ({
+      rank: i + 1,
+      registrationId: f.id,
+      participantId: f.participantId,
+      bibNumber: f.bibNumber,
+      name: f.participant?.fullName ?? '—',
+      gender: f.participant?.gender,
+      country: (f.participant as any)?.country,
+      startTime: f.startTime,
+      finishTime: f.finishTime,
+      elapsedMs: f.startTime && f.finishTime
+        ? new Date(f.finishTime).getTime() - new Date(f.startTime).getTime()
+        : null,
+    }));
   }
 
   async findByBib(raceId: string, bibNumber: string) {

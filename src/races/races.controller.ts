@@ -1,5 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { createReadStream, existsSync } from 'fs';
+import type { Response } from 'express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -66,6 +71,55 @@ export class RacesController {
   @Get(':raceId/registrations/by-bib/:bibNumber')
   findByBib(@Param('raceId') raceId: string, @Param('bibNumber') bibNumber: string) {
     return this.registrationsService.findByBib(raceId, bibNumber);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Stream the GPX file for a race' })
+  @Get(':id/gpx')
+  async streamGpx(@Param('id') id: string, @Res() res: Response) {
+    const race = await this.racesService.findOne(id);
+    if (!race.gpxUrl) throw new NotFoundException('No GPX file for this race');
+    const filename = (race.gpxUrl as string).split('/').pop()!;
+    const filePath = join(process.cwd(), 'uploads', 'gpx', filename);
+    if (!existsSync(filePath)) throw new NotFoundException('GPX file not found on disk');
+    res.setHeader('Content-Type', 'application/gpx+xml');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    createReadStream(filePath).pipe(res);
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Upload a GPX route file for a race' })
+  @ApiConsumes('multipart/form-data')
+  @Post(':id/gpx')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: join(process.cwd(), 'uploads', 'gpx'),
+      filename: (_req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+        cb(null, `${unique}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype === 'application/gpx+xml' || file.originalname.endsWith('.gpx')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only .gpx files are allowed'), false);
+      }
+    },
+  }))
+  uploadGpx(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.racesService.uploadGpx(id, file.filename, user);
+  }
+
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Remove the GPX route file from a race' })
+  @Delete(':id/gpx')
+  removeGpx(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.racesService.removeGpx(id, user);
   }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)

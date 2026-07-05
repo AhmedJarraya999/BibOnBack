@@ -13,20 +13,26 @@ export class ParticipantAccountsService {
     private readonly mail: MailService,
   ) {}
 
-  async provisionIfNeeded(participantId: string, raceName: string) {
+  async provisionIfNeeded(participantId: string, raceName: string, raceId?: string) {
     const participant = await this.prisma.participant.findUnique({
       where: { id: participantId },
     });
-    if (!participant || participant.userId) return null;
+    console.log(`[provisionIfNeeded] participant=${participant?.email} userId=${participant?.userId}`);
+    if (!participant || participant.userId) {
+      console.log(`[provisionIfNeeded] skipping — already provisioned or not found`);
+      return null;
+    }
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: participant.email },
     });
+    console.log(`[provisionIfNeeded] existingUser=${existingUser?.id ?? 'none'}`);
     if (existingUser) {
       await this.prisma.participant.update({
         where: { id: participantId },
         data: { userId: existingUser.id },
       });
+      console.log(`[provisionIfNeeded] linked to existing user — no email sent`);
       return null;
     }
 
@@ -46,12 +52,25 @@ export class ParticipantAccountsService {
       data: { userId: user.id },
     });
 
+    let eventName: string | undefined;
+    let logoUrl: string | undefined;
+    if (raceId) {
+      const race = await this.prisma.race.findUnique({
+        where: { id: raceId },
+        include: { event: { include: { organization: true } } },
+      });
+      eventName = race?.event?.name;
+      logoUrl = race?.event?.logoUrl ?? race?.event?.organization?.logoUrl ?? undefined;
+    }
+
     await this.mail.sendParticipantCredentials({
       to: participant.email,
       fullName: participant.fullName,
       email: participant.email,
       password: rawPassword,
       raceName,
+      eventName,
+      logoUrl,
     });
 
     return { email: participant.email, password: rawPassword };

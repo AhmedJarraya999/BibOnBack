@@ -24,6 +24,9 @@ import { ResultsModule } from './results/results.module';
 import { UsersModule } from './users/users.module';
 import { VolunteersModule } from './volunteers/volunteers.module';
 import { CheckpointsModule } from './checkpoints/checkpoints.module';
+import { ReclamationsModule } from './reclamations/reclamations.module';
+import { MedicalModule } from './medical/medical.module';
+import { GamesModule } from './games/games.module';
 
 @Module({
   imports: [
@@ -62,6 +65,9 @@ import { CheckpointsModule } from './checkpoints/checkpoints.module';
     UsersModule,
     VolunteersModule,
     CheckpointsModule,
+    ReclamationsModule,
+    MedicalModule,
+    GamesModule,
     ResultsModule,
     DashboardModule,
     DistributionsModule,

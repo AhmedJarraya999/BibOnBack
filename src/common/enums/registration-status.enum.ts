@@ -2,5 +2,6 @@ export enum RegistrationStatus {
   REGISTERED = 'REGISTERED',
   CHECKED_IN = 'CHECKED_IN',
   FINISHED = 'FINISHED',
+  DNF = 'DNF',
   DISQUALIFIED = 'DISQUALIFIED',
 }

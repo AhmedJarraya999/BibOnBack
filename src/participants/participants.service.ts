@@ -56,8 +56,19 @@ export class ParticipantsService {
         ...(dto.birthdate && { birthdate: new Date(dto.birthdate) }),
         ...(dto.gender && { gender: dto.gender }),
         ...(dto.email && { email: dto.email }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.country !== undefined && { country: dto.country }),
+        ...(dto.bloodType !== undefined && { bloodType: dto.bloodType }),
+        ...(dto.emergencyContact !== undefined && { emergencyContact: dto.emergencyContact }),
+        ...(dto.emergencyPhone !== undefined && { emergencyPhone: dto.emergencyPhone }),
+        ...(dto.medicalConditions !== undefined && { medicalConditions: dto.medicalConditions }),
       },
     });
+  }
+
+  async updateByUserId(userId: string, dto: UpdateParticipantDto) {
+    const participant = await this.findByUserId(userId);
+    return this.update(participant.id, dto);
   }
 
   async remove(id: string) {

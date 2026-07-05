@@ -39,7 +39,15 @@ export class AuthService {
 
     const { password: _, ...safeUser } = user;
     const tokens = await this.issueTokenPair(user.id, user.email, user.role);
-    return { user: safeUser, ...tokens };
+
+    let permissions: string[] | undefined;
+    if (user.role === UserRole.VOLUNTEER) {
+      const volunteers = await this.prisma.volunteer.findMany({ where: { userId: user.id } });
+      const allPerms = volunteers.flatMap((v) => v.permissions);
+      permissions = [...new Set(allPerms)];
+    }
+
+    return { user: { ...safeUser, ...(permissions && { permissions }) }, ...tokens };
   }
 
   async refresh(refreshToken: string) {
@@ -49,12 +57,12 @@ export class AuthService {
     });
 
     if (!stored || stored.expiresAt < new Date()) {
-      if (stored) await this.prisma.refreshToken.delete({ where: { id: stored.id } });
+      if (stored) await this.prisma.refreshToken.deleteMany({ where: { id: stored.id } });
       throw new UnauthorizedException('Refresh token is invalid or expired');
     }
 
     // rotate: delete old, issue new pair
-    await this.prisma.refreshToken.delete({ where: { id: stored.id } });
+    await this.prisma.refreshToken.deleteMany({ where: { id: stored.id } });
     const tokens = await this.issueTokenPair(stored.user.id, stored.user.email, stored.user.role);
     return tokens;
   }

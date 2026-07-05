@@ -30,6 +30,12 @@ export class ParticipantsController {
     return this.participantsService.findByUserId(user.id);
   }
 
+  @ApiOperation({ summary: 'Update the participant profile linked to the current user' })
+  @Patch('me')
+  updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateParticipantDto) {
+    return this.participantsService.updateByUserId(user.id, dto);
+  }
+
   @ApiOperation({ summary: 'List all participants (paginated, searchable by name or email)' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by name or email' })
   @Get()
