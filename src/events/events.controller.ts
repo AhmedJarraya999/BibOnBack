@@ -35,6 +35,13 @@ export class EventsController {
   }
 
   @Public()
+  @ApiOperation({ summary: 'Search public events' })
+  @Get('public/search')
+  searchPublic(@Query('q') q: string, @Query('limit') limit: string) {
+    return this.eventsService.searchPublic(q ?? '', parseInt(limit ?? '20', 10));
+  }
+
+  @Public()
   @ApiOperation({ summary: 'Get an event by ID' })
   @Get(':id')
   findOne(@Param('id') id: string) {

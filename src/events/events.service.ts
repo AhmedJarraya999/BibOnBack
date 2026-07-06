@@ -24,10 +24,30 @@ export class EventsService {
       data: {
         name: dto.name,
         slug,
+        description: dto.description,
         location: dto.location,
+        addressLine1: dto.addressLine1,
+        addressLine2: dto.addressLine2,
+        city: dto.city,
+        state: dto.state,
+        zipCode: dto.zipCode,
+        country: dto.country,
+        timezone: dto.timezone,
         date: new Date(dto.date),
+        contactEmail: dto.contactEmail,
+        externalUrl: dto.externalUrl,
+        externalResultsUrl: dto.externalResultsUrl,
+        facebookPageId: dto.facebookPageId,
+        facebookEventId: dto.facebookEventId,
         paymentMode: dto.paymentMode,
+        processingFeeMode: dto.processingFeeMode,
+        acceptDonations: dto.acceptDonations ?? false,
+        supportNonBinary: dto.supportNonBinary ?? false,
+        allowPreferNotToSay: dto.allowPreferNotToSay ?? false,
+        isFirstYear: dto.isFirstYear ?? true,
+        estimatedParticipants: dto.estimatedParticipants,
         logoUrl: dto.logoUrl,
+        bannerUrl: dto.bannerUrl,
         pickupLocations: dto.pickupLocations ?? [],
         organizationId: dto.organizationId,
       },
@@ -64,6 +84,18 @@ export class EventsService {
       this.prisma.event.count({ where }),
     ]);
     return paginatedResponse(data, total, page, limit);
+  }
+
+  async searchPublic(q: string, limit: number) {
+    const where = q
+      ? { name: { contains: q, mode: 'insensitive' as const } }
+      : {};
+    return this.prisma.event.findMany({
+      where,
+      take: Math.min(limit, 50),
+      orderBy: { date: 'asc' },
+      select: { id: true, name: true, date: true, location: true, logoUrl: true, slug: true },
+    });
   }
 
   async findOne(idOrSlug: string) {

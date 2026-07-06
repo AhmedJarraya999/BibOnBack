@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 
 export enum PaymentMode {
   PREPAID_ONLY = 'PREPAID_ONLY',
@@ -7,36 +7,41 @@ export enum PaymentMode {
 }
 
 export class CreateEventDto {
-  @ApiProperty({ example: 'Marathon de Tunis 2026' })
-  @IsString()
-  @MinLength(2)
-  name: string;
+  @ApiProperty() @IsString() @MinLength(2) name: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() description?: string;
 
-  @ApiProperty({ example: 'Tunis, Tunisia' })
-  @IsString()
-  location: string;
+  // Location
+  @ApiProperty() @IsString() location: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() addressLine1?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() addressLine2?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() city?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() state?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() zipCode?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() country?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() timezone?: string;
 
-  @ApiProperty({ example: '2026-10-15T08:00:00.000Z' })
-  @IsDateString()
-  date: string;
+  @ApiProperty() @IsDateString() date: string;
 
-  @ApiPropertyOptional({ enum: PaymentMode, default: PaymentMode.PREPAID_OR_ONSITE })
-  @IsEnum(PaymentMode)
-  @IsOptional()
-  paymentMode?: PaymentMode;
+  // Contact
+  @ApiPropertyOptional() @IsString() @IsOptional() contactEmail?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() externalUrl?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() externalResultsUrl?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() facebookPageId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() facebookEventId?: string;
 
-  @ApiPropertyOptional({ example: 'data:image/png;base64,...' })
-  @IsString()
-  @IsOptional()
-  logoUrl?: string;
+  // Registration settings
+  @ApiPropertyOptional({ enum: PaymentMode }) @IsEnum(PaymentMode) @IsOptional() paymentMode?: PaymentMode;
+  @ApiPropertyOptional() @IsString() @IsOptional() processingFeeMode?: string;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() acceptDonations?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() supportNonBinary?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() allowPreferNotToSay?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() isFirstYear?: boolean;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() estimatedParticipants?: number;
 
-  @ApiPropertyOptional({ example: ['Tunis centre', 'La Marsa', 'Ariana'] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  pickupLocations?: string[];
+  // Media
+  @ApiPropertyOptional() @IsString() @IsOptional() logoUrl?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() bannerUrl?: string;
+  @ApiPropertyOptional() @IsArray() @IsString({ each: true }) @IsOptional() pickupLocations?: string[];
 
-  @ApiProperty({ example: 'cuid-of-organization' })
-  @IsString()
-  organizationId: string;
+  @ApiProperty() @IsString() organizationId: string;
 }

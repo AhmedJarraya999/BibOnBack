@@ -22,6 +22,16 @@ export class UsersService {
         email: dto.email,
         password: hashed,
         role: dto.role as $Enums.UserRole,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        gender: dto.gender,
+        address: dto.address,
+        zipCode: dto.zipCode,
+        city: dto.city,
+        country: dto.country,
+        hideFromResults: dto.hideFromResults ?? false,
       },
     });
 

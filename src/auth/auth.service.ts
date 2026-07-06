@@ -25,6 +25,16 @@ export class AuthService {
       email: dto.email,
       password: dto.password,
       role: dto.role ?? UserRole.ORGANIZER,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phone: dto.phone,
+      dateOfBirth: dto.dateOfBirth,
+      gender: dto.gender,
+      address: dto.address,
+      zipCode: dto.zipCode,
+      city: dto.city,
+      country: dto.country,
+      hideFromResults: dto.hideFromResults,
     });
     const tokens = await this.issueTokenPair(user.id, user.email, user.role);
     return { user, ...tokens };
