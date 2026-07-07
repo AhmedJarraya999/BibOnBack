@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateVolunteerDto } from './dto/create-volunteer.dto';
 import { UpdateVolunteerDto } from './dto/update-volunteer.dto';
 import { InviteVolunteerDto } from './dto/invite-volunteer.dto';
+import { ListVolunteersDto } from './dto/list-volunteers.dto';
 import { VolunteersService } from './volunteers.service';
 
 interface AuthUser { id: string; role: UserRole; }
@@ -33,15 +33,9 @@ export class VolunteersController {
   }
 
   @ApiOperation({ summary: 'List volunteers (paginated, filterable by eventId/userId)' })
-  @ApiQuery({ name: 'eventId', required: false })
-  @ApiQuery({ name: 'userId', required: false })
   @Get()
-  findAll(
-    @Query() pagination: PaginationDto,
-    @Query('eventId') eventId?: string,
-    @Query('userId') userId?: string,
-  ) {
-    return this.volunteersService.findAll({ eventId, userId }, pagination.page!, pagination.limit!);
+  findAll(@Query() query: ListVolunteersDto) {
+    return this.volunteersService.findAll({ eventId: query.eventId, userId: query.userId }, query.page!, query.limit!);
   }
 
   @ApiOperation({ summary: 'Get a volunteer assignment by ID' })

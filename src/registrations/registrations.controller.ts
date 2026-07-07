@@ -132,8 +132,8 @@ export class RegistrationsController {
     res.send(png);
   }
 
-  @Roles(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.VOLUNTEER)
-  @ApiOperation({ summary: 'Update registration (bib number, payment status)' })
+  @Public()
+  @ApiOperation({ summary: 'Update registration (bib number, status, dnfReason)' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateRegistrationDto) {
     return this.registrationsService.update(id, dto);

@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CheckpointsService } from './checkpoints.service';
 import { CreateCheckpointDto } from './dto/create-checkpoint.dto';
@@ -80,5 +81,19 @@ export class CheckpointsController {
   @Delete(':id/volunteers/:volunteerId')
   unassignVolunteer(@Param('id') id: string, @Param('volunteerId') volunteerId: string, @CurrentUser() user: AuthUser) {
     return this.checkpointsService.unassignVolunteer(id, volunteerId, user);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get checkpoint info by magic token (no auth required)' })
+  @Get('token/:token')
+  findByToken(@Param('token') token: string) {
+    return this.checkpointsService.findByToken(token);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Scan a bib at a checkpoint by magic token (no auth required)' })
+  @Post('token/:token/scan')
+  scanByToken(@Param('token') token: string, @Body() dto: ScanCheckpointDto) {
+    return this.checkpointsService.scanByToken(token, dto);
   }
 }

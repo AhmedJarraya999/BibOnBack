@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateReclamationDto } from './dto/create-reclamation.dto';
@@ -13,13 +14,13 @@ import { ReclamationsService } from './reclamations.service';
 export class ReclamationsController {
   constructor(private readonly reclamationsService: ReclamationsService) {}
 
-  @Roles(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.VOLUNTEER)
+  @Public()
   @Post()
   create(
     @Body() dto: CreateReclamationDto,
-    @CurrentUser() user: { id: string; role: UserRole },
+    @CurrentUser() user?: { id: string; role: UserRole },
   ) {
-    return this.reclamationsService.create(dto, user.id);
+    return this.reclamationsService.create(dto, user?.id);
   }
 
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)

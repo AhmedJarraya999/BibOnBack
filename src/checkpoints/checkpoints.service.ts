@@ -128,7 +128,30 @@ export class CheckpointsService {
     return { id };
   }
 
-  async scan(id: string, dto: ScanCheckpointDto, volunteerId: string) {
+  async findByToken(token: string) {
+    const cp = await this.prisma.checkpoint.findUnique({
+      where: { token },
+      include: {
+        race: { include: { event: true } },
+        _count: { select: { scans: true } },
+        scans: {
+          include: { registration: { include: { participant: true } } },
+          orderBy: { scannedAt: 'desc' },
+          take: 100,
+        },
+      },
+    });
+    if (!cp) throw new NotFoundException('Checkpoint not found');
+    return cp;
+  }
+
+  async scanByToken(token: string, dto: ScanCheckpointDto) {
+    const cp = await this.prisma.checkpoint.findUnique({ where: { token } });
+    if (!cp) throw new NotFoundException('Checkpoint not found');
+    return this.scan(cp.id, dto, null);
+  }
+
+  async scan(id: string, dto: ScanCheckpointDto, volunteerId: string | null) {
     const cp = await this.prisma.checkpoint.findUnique({ where: { id } });
     if (!cp) throw new NotFoundException('Checkpoint not found');
 

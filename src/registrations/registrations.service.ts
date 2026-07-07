@@ -93,6 +93,8 @@ export class RegistrationsService {
         data: {
           ...(dto.bibNumber !== undefined && { bibNumber: dto.bibNumber }),
           ...(dto.paymentStatus && { paymentStatus: dto.paymentStatus }),
+          ...(dto.status && { status: dto.status }),
+          ...(dto.dnfReason !== undefined && { dnfReason: dto.dnfReason }),
           ...(dto.finishTime && { finishTime: new Date(dto.finishTime), status: 'FINISHED' }),
         },
       });

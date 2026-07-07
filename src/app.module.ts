@@ -27,6 +27,7 @@ import { CheckpointsModule } from './checkpoints/checkpoints.module';
 import { ReclamationsModule } from './reclamations/reclamations.module';
 import { MedicalModule } from './medical/medical.module';
 import { GamesModule } from './games/games.module';
+import { DistributionPointsModule } from './distribution-points/distribution-points.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { GamesModule } from './games/games.module';
     ResultsModule,
     DashboardModule,
     DistributionsModule,
+    DistributionPointsModule,
     PaymentsModule,
     MailModule,
   ],

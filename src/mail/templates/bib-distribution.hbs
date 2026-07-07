@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
+    .card { background: #fff; border-radius: 12px; padding: 36px; max-width: 500px; margin: 0 auto; }
+    .logo { font-size: 22px; font-weight: 900; color: #FF8C00; margin-bottom: 28px; }
+    h1 { color: #1a1a1a; font-size: 20px; margin: 0 0 12px; }
+    p { color: #444; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+    .info-row { display: flex; align-items: flex-start; gap: 10px; background: #f8f8f8; border-radius: 8px; padding: 12px 16px; margin: 8px 0; font-size: 14px; color: #333; }
+    .info-icon { font-size: 18px; flex-shrink: 0; }
+    .btn { display: inline-block; background: #FF8C00; color: #fff; border-radius: 8px; padding: 14px 28px; text-decoration: none; font-weight: bold; font-size: 15px; margin-top: 20px; }
+    .note { margin-top: 24px; background: #fff8ee; border-left: 3px solid #FF8C00; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #7a5000; }
+    .footer { margin-top: 32px; font-size: 12px; color: #aaa; border-top: 1px solid #eee; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">كورسة</div>
+
+    <h1>Distribution des dossards 📦</h1>
+    <p>Bonjour <strong>{{name}}</strong>,</p>
+    <p>Vous avez été assigné(e) à la <strong>distribution des dossards</strong> pour l'événement <strong>{{eventName}}</strong>.</p>
+
+    {{#if distributionDate}}
+    <div class="info-row">
+      <span class="info-icon">📅</span>
+      <div>
+        <strong>Distribution :</strong> à partir du {{distributionDate}}<br/>
+        <span style="color:#888; font-size:13px;">Avant le jour de course</span>
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if raceDayDate}}
+    <div class="info-row">
+      <span class="info-icon">🏁</span>
+      <div>
+        <strong>Jour de course :</strong> {{raceDayDate}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if eventLocation}}
+    <div class="info-row">
+      <span class="info-icon">📍</span>
+      <div>{{eventLocation}}</div>
+    </div>
+    {{/if}}
+
+    <p style="margin-top: 24px;">Utilisez le lien ci-dessous pour accéder à votre interface de distribution. Gardez-le précieusement — il vous sera nécessaire le jour J.</p>
+
+    <a href="{{pickupUrl}}" class="btn">Accéder à la distribution →</a>
+
+    <div class="note">
+      ℹ️ Ce lien est personnel. Les participants viennent avec leur confirmation d'inscription — recherchez leur nom, saisissez le numéro du dossard physique, puis confirmez.
+    </div>
+
+    <div class="footer">
+      Si vous ne vous attendiez pas à recevoir cet email, vous pouvez l'ignorer.<br/>
+      © 2026 كورسة — Race Day Management
+    </div>
+  </div>
+</body>
+</html>

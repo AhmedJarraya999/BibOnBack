@@ -16,6 +16,7 @@ export class MailService {
     isNewAccount: boolean;
     password?: string;
     appUrl: string;
+    pickupUrl?: string;
   }) {
     try {
       await this.mailer.sendMail({
@@ -30,10 +31,45 @@ export class MailService {
           isNewAccount: params.isNewAccount,
           password: params.password,
           appUrl: params.appUrl,
+          pickupUrl: params.pickupUrl,
         },
       });
     } catch (err) {
       this.logger.error(`Failed to send volunteer invite to ${params.to}: ${err.message}`);
+    }
+  }
+
+  async sendBibDistributionAccess(params: {
+    to: string;
+    name: string;
+    eventName: string;
+    eventDate?: Date | null;
+    eventLocation?: string | null;
+    pickupUrl: string;
+  }) {
+    try {
+      const distributionDate = params.eventDate
+        ? new Date(params.eventDate.getTime() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+        : null;
+      const raceDayDate = params.eventDate
+        ? params.eventDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+        : null;
+
+      await this.mailer.sendMail({
+        to: params.to,
+        subject: `Distribution des dossards — ${params.eventName}`,
+        template: 'bib-distribution',
+        context: {
+          name: params.name,
+          eventName: params.eventName,
+          distributionDate,
+          raceDayDate,
+          eventLocation: params.eventLocation,
+          pickupUrl: params.pickupUrl,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send bib distribution email to ${params.to}: ${err.message}`);
     }
   }
 

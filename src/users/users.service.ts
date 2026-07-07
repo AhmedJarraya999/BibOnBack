@@ -58,4 +58,9 @@ export class UsersService {
     const { password: _, ...result } = user;
     return result;
   }
+
+  async deleteMe(id: string) {
+    await this.prisma.user.delete({ where: { id } });
+    return { message: 'Account deleted' };
+  }
 }

@@ -59,6 +59,10 @@ export class VolunteersService {
         include: { user: true, event: true, race: true },
       });
 
+      const pickupUrl = permissions.includes('BIB_DISTRIBUTION')
+        ? `${appUrl}/events/${dto.eventId}/pickup`
+        : undefined;
+
       await this.mail.sendVolunteerInvite({
         to: user.email,
         name: user.name,
@@ -68,6 +72,7 @@ export class VolunteersService {
         isNewAccount,
         password: tempPassword,
         appUrl,
+        pickupUrl,
       });
 
       return volunteer;
